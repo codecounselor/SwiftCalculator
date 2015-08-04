@@ -12,7 +12,8 @@ class ViewController: UIViewController {
   
   @IBOutlet weak var display: UILabel!
   var isUserEnteringNumber = false
-  var operandStack = Array<Double>()
+
+  var brain = CalculatorBrain()
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -22,17 +23,6 @@ class ViewController: UIViewController {
   override func didReceiveMemoryWarning() {
     super.didReceiveMemoryWarning()
     // Dispose of any resources that can be recreated.
-  }
-  
-  //"Computed Property" - requires get/set
-  var displayValue: Double {
-    get{
-      return NSNumberFormatter().numberFromString(display.text!)!.doubleValue
-    }
-    set{
-      display.text = "\(newValue)"
-      isUserEnteringNumber = false
-    }
   }
   
   @IBAction func digitPressed(sender: UIButton) {
@@ -48,38 +38,36 @@ class ViewController: UIViewController {
     }
   }
   
-  @IBAction func enterPressed() {
-    isUserEnteringNumber = false
-    operandStack.append(displayValue);
-    println("operandStack=\(operandStack)")
-  }
-  
   @IBAction func symbolPressed(sender: UIButton) {
-    let operation = sender.currentTitle!
     if isUserEnteringNumber {
       enterPressed()
     }
-    switch operation {
-    case "✕": performOperation { $0 * $1 }
-    case "÷": performOperation { $1 / $0 }
-    case "+": performOperation { $0 + $1 }
-    case "-": performOperation { $1 - $0 }
-    case "√": performOperation1 { sqrt($0) }
-    default: break;
+    if let operation = sender.currentTitle {
+      if let result = brain.performOperation(operation) {
+        displayValue = result
+      } else {
+        displayValue = 0 //I really want nil to clear out the display (or an error message)
+      }
     }
   }
   
-  func performOperation (operation: (Double, Double) -> Double) {
-    if( operandStack.count >= 2 ){
-      displayValue = operation(operandStack.removeLast(), operandStack.removeLast())
-      enterPressed()
+  @IBAction func enterPressed() {
+    isUserEnteringNumber = false
+    if let result = brain.pushOperand(displayValue) {
+      displayValue = result
+    } else {
+      displayValue = 0 //I really want nil to clear out the display (or an error message)
     }
   }
   
-  func performOperation1 (operation: Double -> Double) {
-    if( operandStack.count >= 1 ){
-      displayValue = operation(operandStack.removeLast())
-      enterPressed()
+  //"Computed Property" - requires get/set
+  var displayValue: Double {
+    get{
+      return NSNumberFormatter().numberFromString(display.text!)!.doubleValue
+    }
+    set{
+      display.text = "\(newValue)"
+      isUserEnteringNumber = false
     }
   }
 
